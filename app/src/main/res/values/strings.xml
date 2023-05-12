@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AnimalsSQlite</string>
+    <string name="nothing_there">Nothing there :(</string>
+</resources>
