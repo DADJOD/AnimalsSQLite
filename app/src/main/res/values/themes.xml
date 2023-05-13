@@ -6,4 +6,9 @@
     </style>
 
     <style name="Theme.AnimalsSQlite" parent="Base.Theme.AnimalsSQlite" />
+
+    <style name="Theme.AnimalsSQlite.ActionBar" >
+        <item name="windowNoTitle">false</item>
+        <item name="windowActionBar">true</item>
+    </style>
 </resources>

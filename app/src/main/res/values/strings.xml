@@ -1,4 +1,9 @@
 <resources>
-    <string name="app_name">AnimalsSQlite</string>
-    <string name="nothing_there">Nothing there :(</string>
+    <string name="app_name">Contacts</string>
+    <string name="search">Search</string>
+    <string name="add">Add</string>
+    <string name="up">Up</string>
+    <string name="down">Down</string>
+    <string name="nothing_there">Nothing there</string>
+    <string name="delete">Delete</string>
 </resources>
