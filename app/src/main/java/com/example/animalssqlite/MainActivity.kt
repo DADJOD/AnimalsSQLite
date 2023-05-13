@@ -1,21 +1,30 @@
 package com.example.animalssqlite
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
+import android.content.DialogInterface
 import android.os.Bundle
+import android.text.TextUtils
 import android.view.ContextMenu
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
+import android.widget.EditText
 import android.widget.ListView
+import android.widget.SearchView
+import android.widget.SearchView.OnQueryTextListener
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cursoradapter.widget.SimpleCursorAdapter
 
 
+@Suppress("NAME_SHADOWING")
 class MainActivity : AppCompatActivity() {
     var orderBy: String? = null
     private var selectionArgs: Array<String>? = null
-    private var selections: String? = null
+    private var selection: String? = null
     lateinit var list: ListView
     private lateinit var helper: AnimalsHelper
     lateinit var adapter: SimpleCursorAdapter
@@ -48,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         val cursor = helper.readableDatabase.query(
             AnimalsTable.TABLE_ANIMALS,
             null,
-            selections,
+            selection,
             selectionArgs,
             null,
             null,
@@ -84,13 +93,66 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.main_search -> {
-
+                handleSearch(item)
                 true
             }
 
             else -> super.onOptionsItemSelected(item)
         }
     }
+
+    private var likeQuery = ""
+
+    private fun handleSearch(item: MenuItem) {
+        val searchView = item.actionView as SearchView
+
+        item.expandActionView()
+        searchView.setQuery(likeQuery, false)
+
+        searchView.setOnQueryTextListener(object : OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String): Boolean {
+                if (!TextUtils.isEmpty(newText)) {
+                    selection = AnimalsTable.COLUMN_ANIMAL + "  like  ?"
+                    selectionArgs = arrayOf("%$newText%")
+                } else {
+                    selection = null
+                    selectionArgs = null
+                }
+                likeQuery = newText
+                updateCursor()
+                return true
+            }
+        })
+
+    }
+
+//    private fun handleSearch(item: MenuItem) {
+//        val searchView = item.actionView as SearchView?
+//        item.expandActionView()
+//        searchView!!.setQuery(likeQuery, false)
+//        searchView.setOnQueryTextListener(object : OnQueryTextListener {
+//            override fun onQueryTextSubmit(query: String): Boolean {
+//                return false
+//            }
+//
+//            override fun onQueryTextChange(newText: String): Boolean {
+//                if (!TextUtils.isEmpty(newText)) {
+//                    selection = AnimalsTable.COLUMN_ANIMAL + " like ? "
+//                    selectionArgs = arrayOf("%$newText%")
+//                } else {
+//                    selection = null
+//                    selectionArgs = null
+//                }
+//                likeQuery = newText
+//                updateCursor()
+//                return true
+//            }
+//        })
+//    }
 
     override fun onCreateContextMenu(
         menu: ContextMenu?,
@@ -112,12 +174,61 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.context_update -> {
-
+                updateAnimalDialog(info.position)
                 true
             }
 
             else -> super.onContextItemSelected(item)
         }
+    }
+
+    @SuppressLint("Range")
+    private fun updateAnimalDialog(position: Int) {
+        val cursor = adapter.cursor
+        cursor.moveToPosition(position)
+
+        val dbId = cursor.getString(
+            cursor.getColumnIndex(AnimalsTable.COLUMN_ID)
+        )
+
+        val animal = cursor.getString(
+            cursor.getColumnIndex(AnimalsTable.COLUMN_ANIMAL)
+        )
+
+        val edit = LayoutInflater
+            .from(this)
+            .inflate(R.layout.dialog, null)
+                as EditText
+
+        edit.setText(animal)
+
+        val b = AlertDialog.Builder(this)
+
+        b
+            .setTitle("Update Animal")
+            .setView(edit)
+            .setPositiveButton("Update ", DialogInterface.OnClickListener { dialog, which ->
+                val animal = edit.text.toString()
+                updateAnAnimal(dbId, animal)
+                dialog.dismiss()
+            })
+
+        b.create().show()
+    }
+
+    private fun updateAnAnimal(dbId: String, animal: String) {
+        val contentValues = ContentValues()
+
+        contentValues.put(AnimalsTable.COLUMN_ANIMAL, animal)
+
+        helper.writableDatabase.update(
+            AnimalsTable.TABLE_ANIMALS,
+            contentValues,
+            AnimalsTable.COLUMN_ID + " = ?",
+            arrayOf( dbId )
+        )
+
+        updateCursor()
     }
 
     @SuppressLint("Range")
@@ -132,33 +243,9 @@ class MainActivity : AppCompatActivity() {
         helper.writableDatabase.delete(
             AnimalsTable.TABLE_ANIMALS,
             AnimalsTable.COLUMN_ID + " = ?",
-            arrayOf( dbId )
+            arrayOf(dbId)
         )
 
         updateCursor()
     }
-
-
-//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        when (item.itemId) {
-//            R.id.main_up -> {
-//                orderBy = AnimalsTable.COLUMN_ANIMAL + "  asc  "
-//                updateCursor()
-//                return true
-//            }
-//
-//            R.id.main_down -> {
-//                // select * from animals order by animal desc
-//                orderBy = AnimalsTable.COLUMN_ANIMAL + "  desc  "
-//                updateCursor()
-//                return true
-//            }
-//
-//            R.id.main_search -> {
-//                handleSearch(item)
-//                return true
-//            }
-//        }
-//        return super.onOptionsItemSelected(item)
-//    }
 }
